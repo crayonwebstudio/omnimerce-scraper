@@ -1,4 +1,4 @@
-import { Home, ListChecks, Settings, Users } from 'lucide-react';
+import { Database, Home, ListChecks, Settings, Users } from 'lucide-react';
 import type { NavConfig } from '@/crm/config/types';
 
 export const SCRAPER_NAV: NavConfig = [
@@ -23,6 +23,14 @@ export const SCRAPER_NAV: NavConfig = [
     icon: Users,
     path: '/scraper/leads',
     id: 'leads',
+    pinnable: true,
+    pinned: true,
+  },
+  {
+    title: 'CoreClaw',
+    icon: Database,
+    path: '/scraper/coreclaw',
+    id: 'coreclaw',
     pinnable: true,
     pinned: true,
   },
