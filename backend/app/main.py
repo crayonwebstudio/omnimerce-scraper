@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from . import coreclaw
 from .adapters import google_maps, instagram, web, youtube
 
 app = FastAPI(title="Omnimerce Scraper", version="0.1.0")
@@ -70,6 +71,21 @@ class Job(BaseModel):
     status: str = "created"
     results: list[UnifiedRecord] = Field(default_factory=list)
     created_at: str = ""
+    worker: str = ""
+    coreclaw_run_id: str = ""
+    coreclaw_dataset_id: str = ""
+
+
+class CoreClawJobCreate(BaseModel):
+    worker: str
+    query: str
+    location: str = ""
+    limit: int = 100
+
+
+class CoreClawStatus(BaseModel):
+    coreclaw_configured: bool
+    workers: list = Field(default_factory=list)
 
 
 @app.get("/health")
@@ -113,6 +129,119 @@ def get_job(job_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
     return job
+
+
+@app.get("/api/coreclaw/status", response_model=CoreClawStatus)
+def coreclaw_status():
+    return CoreClawStatus(
+        coreclaw_configured=coreclaw.configured(),
+        workers=coreclaw.WORKERS,
+    )
+
+
+def _refresh_coreclaw_job(job: Job):
+    if job.source != "coreclaw" or job.status != "running":
+        return job
+    if not job.coreclaw_run_id:
+        return job
+    try:
+        run = coreclaw.get_run(job.coreclaw_run_id)
+    except Exception as exc:
+        job.status = "failed"
+        job.results = []
+        return job
+    status = (run.get("status") or "").lower()
+    if run.get("dataset_id"):
+        job.coreclaw_dataset_id = run["dataset_id"]
+    if status in ("succeeded", "finished", "completed", "success"):
+        if not job.coreclaw_dataset_id:
+            job.status = "failed"
+            return job
+        try:
+            items = coreclaw.get_dataset_items(job.coreclaw_dataset_id)
+        except Exception:
+            job.status = "failed"
+            return job
+        records = []
+        for item in items[: job.limit]:
+            mapped = coreclaw.map_item(
+                item, job.worker, job.id, job.query, job.location
+            )
+            if mapped and mapped["name"]:
+                mapped["verification_note"] = (
+                    f"CoreClaw run {job.coreclaw_run_id}"
+                )
+                mapped["collected_at"] = job.created_at
+                records.append(UnifiedRecord(**mapped))
+        job.results = records
+        job.status = "succeeded"
+    elif status in ("failed", "error", "cancelled", "canceled", "timeout"):
+        job.status = "failed"
+    return job
+
+
+@app.post("/api/coreclaw/jobs", response_model=Job)
+def create_coreclaw_job(payload: CoreClawJobCreate):
+    if not coreclaw.configured():
+        raise HTTPException(
+            status_code=503,
+            detail="CoreClaw is not connected. Set CORECLAW_TOKEN in Coolify for app omnimerce-scraper, then redeploy.",
+        )
+    if payload.worker not in coreclaw.WORKER_IDS:
+        raise HTTPException(status_code=400, detail="Unknown CoreClaw worker.")
+    if not payload.query.strip():
+        raise HTTPException(status_code=400, detail="Query is required.")
+    if payload.limit < 1 or payload.limit > 1000:
+        raise HTTPException(status_code=400, detail="Limit must be between 1 and 1000.")
+    urls = [
+        line.strip()
+        for line in payload.query.splitlines()
+        if line.strip()
+    ]
+    query = urls[0] if urls else payload.query.strip()
+    if payload.worker in (
+        "coreclaw~instagram-profile-scraper",
+        "coreclaw~youtube-channel-scraper",
+    ):
+        query = payload.query.strip()
+    custom_input = coreclaw.build_input(
+        payload.worker, query, payload.location, payload.limit, urls
+    )
+    try:
+        run = coreclaw.start_run(payload.worker, custom_input)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"CoreClaw run failed: {exc}")
+    job_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    job = Job(
+        id=job_id,
+        source="coreclaw",
+        query=payload.query.strip(),
+        location=payload.location,
+        limit=payload.limit,
+        enrich_email=False,
+        status="running",
+        results=[],
+        created_at=now,
+        worker=payload.worker,
+        coreclaw_run_id=run.get("run_id", ""),
+        coreclaw_dataset_id=run.get("dataset_id", ""),
+    )
+    JOBS[job_id] = job
+    return job
+
+
+@app.get("/api/coreclaw/jobs", response_model=list[Job])
+def list_coreclaw_jobs():
+    return [job for job in JOBS.values() if job.source == "coreclaw"]
+
+
+@app.get("/api/coreclaw/jobs/{job_id}", response_model=Job)
+def get_coreclaw_job(job_id: str):
+    job = JOBS.get(job_id)
+    if job is None or job.source != "coreclaw":
+        raise HTTPException(status_code=404, detail="CoreClaw job not found.")
+    return _refresh_coreclaw_job(job)
 
 
 # Frontend is the Vite build output in frontend/dist, built by Docker.
