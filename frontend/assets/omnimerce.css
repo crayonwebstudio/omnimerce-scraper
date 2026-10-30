@@ -1,0 +1,33 @@
+/* Omnimerce branding overlay, on top of real Metronic CSS.
+   This file is not Metronic. It only sets Omnimerce colours, layout
+   sizes that Metronic utilities do not provide, and badge styles.
+   Metronic layout, Tailwind utilities, sidebar width, and header
+   height come from assets/metronic.css, which is vendor compiled CSS.
+   Keenicons come from assets/keenicons/outline/style.css. */
+:root {
+  --omnimerce-primary: #242424;
+  --omnimerce-accent: #FF795B;
+  --omnimerce-background: #FAF8F5;
+  --omnimerce-text: #363636;
+}
+html, body { height: 100%; }
+body { background: var(--omnimerce-background); color: var(--omnimerce-text); font-family: Inter, system-ui, sans-serif; }
+.omnimerce-shell { min-height: 100vh; }
+.omnimerce-sidebar { background: var(--omnimerce-primary); color: #fff; }
+.omnimerce-sidebar a, .omnimerce-sidebar button { color: #fff; }
+.omnimerce-nav-active { background: var(--omnimerce-accent); color: #fff; }
+.omnimerce-accent { color: var(--omnimerce-accent); }
+.omnimerce-btn { background: var(--omnimerce-primary); color: #fff; }
+.omnimerce-btn:hover { background: var(--omnimerce-accent); }
+.omnimerce-card { background: #fff; border: 1px solid #e4e4e7; }
+.omnimerce-input { background: #fff; border: 1px solid #d4d4d8; color: var(--omnimerce-text); }
+.omnimerce-input:focus { border-color: var(--omnimerce-accent); outline: none; }
+.omnimerce-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+.omnimerce-badge-raw { background: #f4f4f5; color: #52525b; }
+.omnimerce-badge-enriched { background: #ffedd5; color: #9a3412; }
+.omnimerce-badge-verified { background: #dcfce7; color: #166534; }
+.omnimerce-badge-notsent { background: #f4f4f5; color: #52525b; }
+.omnimerce-badge-stub { background: #e0e7ff; color: #3730a3; }
+.omnimerce-table th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; text-align: left; }
+.omnimerce-table td, .omnimerce-table th { padding: 10px 12px; border-bottom: 1px solid #e4e4e7; vertical-align: top; }
+.omnimerce-hidden { display: none !important; }
