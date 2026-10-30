@@ -226,3 +226,16 @@ Decision for the scraper module UI, based on that:
 - No new UI framework is introduced for this module. Metronic Tailwind React is the UI, FastAPI is the API behind it, gosom and other adapters are the workers.
 
 No build, no deployment, and no endpoint POST will happen until he picks scope in point 1.
+
+## Metronic UI implementation, 2026-10-30, live
+
+Method used, chosen for reliability in Coolify Docker: a static frontend served by FastAPI, using real vendor compiled Metronic CSS, not a lookalike stylesheet and not a full React rebuild.
+
+Source, verified by zip listing, not re-derived:
+- Metronic Tailwind React v9.4.13, from ~/workspace/metronics-deploy/new-version-2026-10-30/, which milan uploaded via Drive. The existing v9.5.0 copy was not overwritten, and no Next.js files were copied into this repo.
+- Concepts Vite prebuilt CSS: metronic-tailwind-react-concepts/typescript/vite/dist/assets/index-BmpQ7Hib.css, copied verbatim to frontend/assets/metronic.css, MD5 verified against the zip extract. This CSS provides Metronic demo1 layout variables, sidebar width 280px, header height 70px, sidebar, header, table, container, and Tailwind utilities used by the page.
+- Keenicons outline, from the demos Vite source, because the concepts Vite dist has no Keenicons font files: metronic-tailwind-react-demos/typescript/vite/src/components/keenicons/assets/outline/style.css, copied verbatim to frontend/assets/keenicons/outline/style.css, with its fonts keenicons-outline.ttf, keenicons-outline.woff, and keenicons-outline.svg in frontend/assets/keenicons/outline/fonts/, so the font URLs in style.css resolve without edits.
+- Omnimerce overlay: frontend/assets/omnimerce.css is the only new stylesheet, and it is labelled as an overlay, not Metronic. It sets only Omnimerce colours #242424, #FF795B, #FAF8F5, #363636, sidebar background, button hover, badge colours, table cell padding, and a hidden view class. No Omnimerce logo was redrawn, the header uses a text wordmark.
+- Markup: Metronic demo1 layout pattern, sidebar with sidebar-header, sidebar-wrapper, sidebar-logo classes, header with header class, cards as white rounded bordered blocks using Metronic utilities, tables using the Metronic table class plus overlay cell padding, badges as rounded pills with overlay colours, Keenicons as ki-outline plus ki-element-11, ki-element-plus, ki-data, ki-setting-2, ki-chart-line, ki-shield-tick.
+- What is not yet a full React component reuse: the page does not import Metronic React components, accordion menus, or dropdowns, because that would require a Node Vite build and the full concepts React dependency set. That remains a possible later step, and it is not claimed here.
+- API behaviour unchanged: GET /health, POST /api/jobs, GET /api/jobs, GET /api/jobs/{id} are the same as before, jobs are in memory only, adapters are still stubs, MB and cost show as not measured, Omnimerce POST status shows as Not sent, and Settings are saved in the browser only, not on the server and not in the repo.
