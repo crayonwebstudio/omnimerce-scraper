@@ -72,6 +72,59 @@ export async function createJob(payload: JobCreate): Promise<Job> {
   return (await res.json()) as Job;
 }
 
+export interface CoreClawWorker {
+  id: string;
+  name: string;
+  version: string;
+  purpose: string;
+  input: string;
+}
+
+export interface CoreClawStatus {
+  coreclaw_configured: boolean;
+  workers: CoreClawWorker[];
+}
+
+export interface CoreClawJobCreate {
+  worker: string;
+  query: string;
+  location: string;
+  limit: number;
+}
+
+export async function fetchCoreClawStatus(): Promise<CoreClawStatus> {
+  const res = await fetch('/api/coreclaw/status');
+  if (!res.ok) throw new Error('Failed to load CoreClaw status');
+  return (await res.json()) as CoreClawStatus;
+}
+
+export async function fetchCoreClawJobs(): Promise<Job[]> {
+  const res = await fetch('/api/coreclaw/jobs');
+  if (!res.ok) throw new Error('Failed to load CoreClaw jobs');
+  return (await res.json()) as Job[];
+}
+
+export async function fetchCoreClawJob(jobId: string): Promise<Job> {
+  const res = await fetch(`/api/coreclaw/jobs/${jobId}`);
+  if (!res.ok) throw new Error('CoreClaw job not found');
+  return (await res.json()) as Job;
+}
+
+export async function createCoreClawJob(
+  payload: CoreClawJobCreate,
+): Promise<Job> {
+  const res = await fetch('/api/coreclaw/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.detail || 'Failed to create CoreClaw job');
+  }
+  return (await res.json()) as Job;
+}
+
 export function flattenLeads(jobs: Job[]): Lead[] {
   return jobs.flatMap((job) => job.results || []);
 }
