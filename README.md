@@ -13,7 +13,7 @@ Skeleton only. This is not a finished scraper.
 - FastAPI backend with job create, list, and detail endpoints, using the unified record schema.
 - Adapters for google_maps, youtube, instagram, and web are stubs. They return no fake data and they do not scrape yet. Each stub has a clear TODO.
 - Frontend is a simple static placeholder, labelled as placeholder pending Metronic Tailwind React Vite integration.
-- Metronic is NOT copied into this repo yet. The planned UI is Metronic Tailwind React Vite, per docs/design.md. The Next.js Concept version is missing 44 files, so do not copy Metronic into this repo until that version question is settled.
+- Metronic is NOT copied into this repo yet. The planned UI is Metronic Tailwind React Vite from the v9.4.13 upload, per docs/design.md. That upload was verified 2026-10-30 to contain all 44 previously missing Next.js Concept files, so the Next.js version is also complete in v9.4.13 if a Next.js frontend is chosen later. No Metronic code is in this repo yet.
 - Omnimerce endpoint storage is not wired to a real endpoint yet. The endpoint URL and auth details are still pending from milan. See .env.example for placeholder values only.
 
 ## MVP scope
