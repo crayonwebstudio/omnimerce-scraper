@@ -8,7 +8,6 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .adapters import google_maps, instagram, web, youtube
@@ -116,6 +115,28 @@ def get_job(job_id: str):
     return job
 
 
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
-if FRONTEND_DIR.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+# Frontend is the Vite build output in frontend/dist, built by Docker.
+# API routes above are defined first, so they are never shadowed by
+# the static frontend. Deep SPA routes such as /scraper/dashboard
+# fall back to index.html, so a refresh or direct link still loads
+# the React app.
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+
+@app.get("/")
+def frontend_root():
+    index = FRONTEND_DIST / "index.html"
+    if not index.exists():
+        raise HTTPException(status_code=404, detail="Frontend not built.")
+    return FileResponse(str(index))
+
+
+@app.get("/{full_path:path}")
+def frontend_spa(full_path: str):
+    candidate = FRONTEND_DIST / full_path
+    if candidate.is_file():
+        return FileResponse(str(candidate))
+    index = FRONTEND_DIST / "index.html"
+    if not index.exists():
+        raise HTTPException(status_code=404, detail="Frontend not built.")
+    return FileResponse(str(index))

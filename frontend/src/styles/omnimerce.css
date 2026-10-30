@@ -1,0 +1,14 @@
+/* Omnimerce overlay only, on top of the vendor Metronic theme.
+   Vendor globals.css is unchanged. This file only overrides theme
+   variables in light mode: background #FAF8F5, text #363636, and
+   primary actions in the Omnimerce AI accent #FF795B with dark
+   #242424 text, so primary buttons are vendor Metronic Buttons in
+   the Omnimerce accent, not custom black buttons. */
+:root {
+  --background: #faf8f5;
+  --foreground: #363636;
+  --primary: #ff795b;
+  --primary-foreground: #242424;
+  --chart-1: #ff795b;
+  --ring: #ff795b;
+}

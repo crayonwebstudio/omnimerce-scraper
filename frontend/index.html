@@ -1,320 +1,45 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Omnimerce Scraper</title>
-<link rel="stylesheet" href="/assets/metronic.css">
-<link rel="stylesheet" href="/assets/keenicons/outline/style.css">
-<link rel="stylesheet" href="/assets/omnimerce.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
-</head>
-<body class="demo1 sidebar-fixed header-fixed text-base antialiased">
-<div class="flex grow">
-  <div class="sidebar bg-background lg:border-e lg:border-border lg:fixed lg:top-0 lg:bottom-0 lg:z-20 lg:flex flex-col items-stretch shrink-0 hidden md:flex">
-    <div class="sidebar-header flex items-center px-6">
-      <div class="sidebar-logo flex items-center gap-2">
-        <i class="ki-outline ki-element-11 text-xl"></i>
-        <span class="text-lg font-bold">omnimerce <span class="omnimerce-accent">scraper</span></span>
-      </div>
-    </div>
-    <div class="sidebar-wrapper flex flex-col gap-4 px-4 py-4" style="width:280px;">
-      <p class="text-xs uppercase font-medium px-2">Scraper, Demo1 light sidebar</p>
-      <nav class="flex flex-col gap-2">
-        <button data-view="dashboard" class="nav-btn omnimerce-nav-active flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left"><i class="ki-outline ki-element-11"></i><span>Dashboard</span></button>
-        <button data-view="leads" class="nav-btn flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left"><i class="ki-outline ki-users"></i><span>Leads, CRM list</span></button>
-        <button data-view="jobs" class="nav-btn flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left"><i class="ki-outline ki-data"></i><span>Jobs, pipeline</span></button>
-        <button class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left omnimerce-btn" onclick="openNewJobSheet()"><i class="ki-outline ki-element-plus"></i><span>New Job, sheet</span></button>
-        <button data-view="settings" class="nav-btn flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left"><i class="ki-outline ki-setting-2"></i><span>Settings</span></button>
-      </nav>
-      <div class="omnimerce-card rounded-xl p-4 text-sm">
-        <p class="font-semibold flex items-center gap-2"><i class="ki-outline ki-shield-tick"></i>LinkedIn guardrail</p>
-        <p class="text-sm">Public research only, no automated LinkedIn scraping, no guessed links or emails.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="wrapper flex grow flex-col min-w-0">
-    <header class="header flex items-center justify-between px-6 bg-background border-b">
-      <div class="flex items-center gap-4">
-        <button class="md:hidden omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="document.querySelector('.sidebar').classList.toggle('hidden')">Menu</button>
-        <div>
-          <h1 id="toolbarTitle" class="text-xl font-bold">Dashboard</h1>
-          <p id="toolbarDesc" class="text-sm">Central hub for scraper jobs and leads, based on Metronic CRM and Store Inventory.</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 text-sm">
-        <span class="omnimerce-badge omnimerce-badge-stub">Adapters: stub</span>
-        <span id="apiStatus" class="omnimerce-badge omnimerce-badge-raw">API: checking</span>
-        <button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="openNewJobSheet()">New Job</button>
-        <button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="loadJobs()">Refresh</button>
-      </div>
-    </header>
-
-    <main class="grow pt-5" role="content">
-      <div class="container-fluid px-6 pb-6">
-      <section id="view-dashboard">
-        <div class="grid gap-5 lg:gap-7">
-          <div class="grid xl:grid-cols-3 gap-5 lg:gap-7 items-stretch">
-            <div class="omnimerce-card rounded-xl shadow-sm p-6">
-              <div class="flex items-center justify-between"><h2 class="text-lg font-semibold">Jobs run</h2><button class="text-sm" onclick="showView('jobs')">See All</button></div>
-              <p id="dashJobs" class="text-3xl font-semibold">0</p>
-              <p class="text-sm">From Store Inventory Orders card pattern, repurposed for jobs, not orders.</p>
-              <p id="dashJobsBySource" class="text-sm"></p>
-            </div>
-            <div class="omnimerce-card rounded-xl shadow-sm p-6">
-              <div class="flex items-center justify-between"><h2 class="text-lg font-semibold">Leads kept</h2><button class="text-sm" onclick="showView('leads')">See All</button></div>
-              <p id="dashLeads" class="text-3xl font-semibold">0</p>
-              <div class="flex items-center gap-1 mb-2"><div id="dashVerifiedBar" class="bg-green-500 h-2 rounded-xs" style="width:0%"></div><div id="dashRawBar" class="bg-yellow-500 h-2 rounded-xs" style="width:0%"></div></div>
-              <p id="dashLeadsBySource" class="text-sm"></p>
-              <p class="text-sm">From Store Inventory Inventory card pattern, repurposed for leads, not stock.</p>
-            </div>
-            <div class="omnimerce-card rounded-xl shadow-sm p-6">
-              <h2 class="text-lg font-semibold">Top source</h2>
-              <p id="dashTopSource" class="text-3xl font-semibold">No leads yet</p>
-              <p class="text-sm">From Store Inventory Best Seller card pattern, repurposed for the source with most leads.</p>
-              <p class="text-sm">MB used and cost are not measured yet, they start with real adapters.</p>
-            </div>
-          </div>
-
-          <div class="grid lg:grid-cols-3 gap-5 lg:gap-7 items-stretch">
-            <div class="omnimerce-card rounded-xl shadow-sm p-6">
-              <h2 class="text-lg font-semibold">Job performance</h2>
-              <p class="text-sm">From Store Inventory Sales Activity card pattern, repurposed for jobs.</p>
-              <div class="grid grid-cols-3 gap-2 mt-4">
-                <div><p id="perfCompleted" class="text-xl font-bold">0</p><p class="text-xs font-medium">Jobs completed</p></div>
-                <div><p id="perfLeads" class="text-xl font-bold">0</p><p class="text-xs font-medium">Leads kept</p></div>
-                <div><p id="perfFailed" class="text-xl font-bold">0</p><p class="text-xs font-medium">Jobs failed</p></div>
-              </div>
-              <div class="flex items-center justify-between mt-4"><span class="text-sm font-medium">Pipeline progress</span><span id="perfPercent" class="text-xs font-semibold">0%</span></div>
-              <div class="omnimerce-progress"><div id="perfBar" class="omnimerce-progress-bar" style="width:0%"></div></div>
-              <h3 class="text-sm font-medium mt-4">Recent activity</h3>
-              <ul id="activityList" class="space-y-2 text-sm"><li>No jobs yet.</li></ul>
-            </div>
-            <div class="omnimerce-card rounded-xl shadow-sm p-6 lg:col-span-2">
-              <h2 class="text-lg font-semibold">Results, wide table</h2>
-              <p class="text-sm">From Store Inventory Product Stock card pattern, repurposed for lead results.</p>
-              <div class="overflow-x-auto mt-4">
-                <table class="omnimerce-table table w-full text-sm">
-                  <thead><tr><th>Lead</th><th>Source</th><th>Website</th><th>Email</th><th>Verification</th></tr></thead>
-                  <tbody id="dashResultsBody"><tr><td colspan="5">No leads yet.</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div class="omnimerce-card rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-semibold">Recent jobs</h2>
-            <p class="text-sm">From Store Inventory recent orders table pattern, repurposed for jobs.</p>
-            <div class="overflow-x-auto mt-4">
-              <table class="omnimerce-table table w-full text-sm">
-                <thead><tr><th>Source</th><th>Query</th><th>Status</th><th>Results</th><th>Action</th></tr></thead>
-                <tbody id="recentBody"><tr><td colspan="5">No jobs yet.</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-leads" class="omnimerce-hidden">
-        <div class="omnimerce-card rounded-xl shadow-sm">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 border-b">
-            <div><h2 class="text-lg font-semibold">Leads, CRM list</h2><p class="text-sm">From CRM Company List and Contact List, with DataGrid style table, search, and badges. No mock companies are included.</p></div>
-            <div class="flex gap-2">
-              <input id="leadSearch" placeholder="Search leads" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full" oninput="renderLeads()">
-              <button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="exportLeadsCsv()">Export CSV</button>
-            </div>
-          </div>
-          <div class="flex gap-2 p-6">
-            <button data-leadtab="all" class="lead-tab omnimerce-nav-active rounded-lg px-4 py-2 text-sm" onclick="setLeadTab('all')">All leads</button>
-            <button data-leadtab="companies" class="lead-tab rounded-lg px-4 py-2 text-sm" onclick="setLeadTab('companies')">Companies, business</button>
-            <button data-leadtab="contacts" class="lead-tab rounded-lg px-4 py-2 text-sm" onclick="setLeadTab('contacts')">Contacts, profile</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="omnimerce-table table w-full text-sm">
-              <thead><tr><th></th><th>Lead</th><th>Categories, source</th><th>Location</th><th>Website</th><th>Email</th><th>Verification</th><th>Action</th></tr></thead>
-              <tbody id="leadsBody"><tr><td colspan="8">No leads yet. Create a job, and results will appear here when real adapters are built.</td></tr></tbody>
-            </table>
-          </div>
-          <div class="p-6 border-t"><p id="leadsFooter" class="text-sm">Showing 0 of 0 leads.</p></div>
-        </div>
-      </section>
-
-      <section id="view-jobs" class="omnimerce-hidden">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="omnimerce-card rounded-xl shadow-sm p-6 flex items-center gap-4">
-            <div class="shrink-0 rounded-full border-4 flex items-center justify-center" style="width:56px;height:56px;border-color:#FF795B;"><i class="ki-outline ki-check-circle"></i></div>
-            <div><p id="queueCompleted" class="text-base font-medium">0 / 0</p><p class="text-sm">Jobs completed, Todo Progress Card pattern</p></div>
-          </div>
-          <div class="omnimerce-card rounded-xl shadow-sm p-6 flex items-center gap-4">
-            <div class="shrink-0 rounded-full border-4 flex items-center justify-center" style="width:56px;height:56px;border-color:#eab308;"><i class="ki-outline ki-data"></i></div>
-            <div><p id="queueCreated" class="text-base font-medium">0 jobs</p><p class="text-sm">Jobs created, Todo stats card pattern</p></div>
-          </div>
-          <div class="omnimerce-card rounded-xl shadow-sm p-6 flex items-center gap-4">
-            <div class="shrink-0 rounded-full border-4 flex items-center justify-center" style="width:56px;height:56px;border-color:#ef4444;"><i class="ki-outline ki-shield-cross"></i></div>
-            <div><p id="queueFailed" class="text-base font-medium">0 jobs</p><p class="text-sm">Jobs failed, Todo stats card pattern</p></div>
-          </div>
-        </div>
-
-        <div class="omnimerce-card rounded-xl shadow-sm mt-6">
-          <div class="p-6 border-b"><h2 class="text-sm font-medium flex items-center gap-2"><i class="ki-outline ki-data"></i>Job queue, Todo Task List pattern</h2></div>
-          <div id="queueList" class="divide-y divide-border"><p class="px-5 py-4 text-sm">No jobs yet.</p></div>
-        </div>
-
-        <h2 class="text-lg font-semibold mt-6">Job pipeline, CRM Deal List pattern</h2>
-        <p class="text-sm">Same jobs as the queue above, shown as deal cards. Stage is the job source, status is the job status.</p>
-        <div id="dealGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4"><p class="text-sm">No jobs yet.</p></div>
-
-        <div id="detailCard" class="omnimerce-card rounded-xl shadow-sm p-6 mt-6 omnimerce-hidden">
-          <h2 class="text-lg font-semibold">Job detail</h2>
-          <p id="detailMeta" class="text-sm"></p>
-          <div class="overflow-x-auto mt-4">
-            <table class="omnimerce-table table w-full text-sm">
-              <thead><tr><th>Verification</th><th>Name</th><th>Website</th><th>Email</th><th>Source URL</th></tr></thead>
-              <tbody id="detailBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-settings" class="omnimerce-hidden">
-        <div class="omnimerce-card rounded-xl shadow-sm p-6">
-          <h2 class="text-lg font-semibold flex items-center gap-2"><i class="ki-outline ki-setting-2"></i>Settings</h2>
-          <p class="text-sm">These settings are saved in this browser only for now. They are not sent to the server, and no secrets are stored in this repo.</p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="endpointUrl">Omnimerce endpoint URL</label><input id="endpointUrl" placeholder="Example: https://example.com/api/v1/muse-responses" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"></div>
-            <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="apiKey">API key, masked</label><input id="apiKey" type="password" placeholder="Saved in browser only" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"></div>
-            <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="proxyProvider">Proxy provider</label><select id="proxyProvider" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"><option value="">Not set</option><option value="evomi">Evomi</option><option value="other">Other provider</option></select></div>
-            <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="costLimit">Cost limit, per job</label><input id="costLimit" placeholder="Example: 5 USD" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"></div>
-          </div>
-          <button class="omnimerce-btn rounded-lg px-6 py-2 text-sm font-medium mt-4" onclick="saveSettings()">Save in this browser</button>
-          <p id="settingsResult" class="text-sm mt-4"></p>
-          <p class="text-sm mt-4">LinkedIn guardrail: public research only, no automated LinkedIn scraping, no guessed links or emails.</p>
-        </div>
-      </section>
-      </div>
-    </main>
-  </div>
-</div>
-
-<div id="sheetOverlay" class="omnimerce-sheet-overlay omnimerce-hidden" onclick="closeSheets()"></div>
-<div id="newJobSheet" class="omnimerce-sheet omnimerce-hidden">
-  <div class="border-b py-3.5 px-5 flex items-center justify-between"><h2 class="text-lg font-semibold flex items-center gap-2"><i class="ki-outline ki-element-plus"></i>New Job, CRM sheet pattern</h2><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="closeSheets()">Close</button></div>
-  <div class="p-5 flex flex-col gap-4">
-    <p class="text-sm">From CRM New Company Sheet and New Contact Sheet: a right side sheet, with form labels and inputs, and a footer with Cancel and Create actions. Adapters are stubs, so results will be empty until real adapters are built.</p>
-    <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="source">Source</label><select id="source" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"><option value="google_maps">Google Maps</option><option value="youtube">YouTube</option><option value="instagram">Instagram</option><option value="web">Web</option></select></div>
-    <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="query">Query</label><input id="query" placeholder="Example: dentists in Berlin" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"></div>
-    <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="location">Location</label><input id="location" placeholder="Example: Berlin, Germany" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"></div>
-    <div class="flex flex-col gap-2"><label class="text-sm font-medium" for="limit">Limit</label><input id="limit" type="number" value="100" min="1" max="1000" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full"></div>
-    <div class="flex flex-col gap-2 text-sm"><label><input type="checkbox" id="enrich"> Enrich with email, from published websites only</label><label><input type="checkbox" id="proxyToggle"> Use proxy</label><p class="text-sm">Proxy is a UI setting for now, it is not sent to the current job API, which has no proxy field.</p></div>
-    <p id="jobResult" class="text-sm"></p>
-  </div>
-  <div class="border-t py-3.5 px-5 flex items-center justify-between"><button class="rounded-lg px-4 py-2 text-sm border" onclick="closeSheets()">Cancel</button><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="createJob()">Create Job</button></div>
-</div>
-
-<div id="leadSheet" class="omnimerce-sheet omnimerce-hidden">
-  <div class="border-b py-3.5 px-5 flex items-center justify-between"><h2 class="text-lg font-semibold">Lead detail, CRM detail sheet pattern</h2><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="closeSheets()">Close</button></div>
-  <div id="leadSheetBody" class="p-5 text-sm"></div>
-  <div class="border-t py-3.5 px-5"><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="closeSheets()">Close</button></div>
-</div>
-
-<script>
-var _jobs = [], _leadTab = 'all';
-var _titles = {dashboard: ['Dashboard', 'Central hub for scraper jobs and leads, based on Metronic CRM and Store Inventory.'], leads: ['Leads, CRM list', 'Companies and contacts from scraper results, based on CRM Company List and Contact List.'], jobs: ['Jobs, pipeline', 'Job queue and pipeline cards, based on Todo Task List and CRM Deal List.'], settings: ['Settings', 'Browser only settings, no secrets stored in the repo.']};
-function showView(name) {
-  ['dashboard', 'leads', 'jobs', 'settings'].forEach(function(v) { document.getElementById('view-' + v).classList.toggle('omnimerce-hidden', v !== name); });
-  document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.toggle('omnimerce-nav-active', b.dataset.view === name); });
-  document.getElementById('toolbarTitle').textContent = _titles[name][0];
-  document.getElementById('toolbarDesc').textContent = _titles[name][1];
-  if (name === 'leads') renderLeads();
-}
-document.querySelectorAll('.nav-btn').forEach(function(b) { b.addEventListener('click', function() { showView(b.dataset.view); loadJobs(); }); });
-function openNewJobSheet() { document.getElementById('sheetOverlay').classList.remove('omnimerce-hidden'); document.getElementById('newJobSheet').classList.remove('omnimerce-hidden'); }
-function closeSheets() { document.getElementById('sheetOverlay').classList.add('omnimerce-hidden'); document.getElementById('newJobSheet').classList.add('omnimerce-hidden'); document.getElementById('leadSheet').classList.add('omnimerce-hidden'); }
-function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-function badgeFor(status) { return '<span class="omnimerce-badge omnimerce-badge-stub">' + esc(status) + '</span>'; }
-function verificationBadge(r) { if (r.verified) return '<span class="omnimerce-badge omnimerce-badge-verified">Verified</span>'; if (r.email) return '<span class="omnimerce-badge omnimerce-badge-enriched">Enriched</span>'; return '<span class="omnimerce-badge omnimerce-badge-raw">Raw</span>'; }
-function statusDot(status) { if (status === 'stub_complete') return '<span class="omnimerce-dot" style="background:#22c55e"></span>'; if (status === 'failed') return '<span class="omnimerce-dot" style="background:#ef4444"></span>'; return '<span class="omnimerce-dot" style="background:#eab308"></span>'; }
-function allLeads() { var out = []; _jobs.forEach(function(j){ (j.results || []).forEach(function(r){ var c = Object.assign({}, r); c._job = j; out.push(c); }); }); return out; }
-function setLeadTab(t) { _leadTab = t; document.querySelectorAll('.lead-tab').forEach(function(b){ b.classList.toggle('omnimerce-nav-active', b.dataset.leadtab === t); }); renderLeads(); }
-function renderLeads() {
-  var q = (document.getElementById('leadSearch').value || '').toLowerCase();
-  var leads = allLeads().filter(function(r){ if (_leadTab === 'companies' && r.type !== 'business') return false; if (_leadTab === 'contacts' && r.type !== 'profile') return false; if (q && ((r.name || '') + ' ' + (r.website || '') + ' ' + (r.location || '')).toLowerCase().indexOf(q) < 0) return false; return true; });
-  var body = document.getElementById('leadsBody');
-  body.innerHTML = leads.length ? leads.map(function(r, i){ var initial = (r.name || '?').charAt(0).toUpperCase(); return '<tr><td><input type="checkbox" class="lead-check" data-index="' + i + '"></td><td><span class="flex items-center gap-2"><span class="omnimerce-avatar">' + esc(initial) + '</span><button class="font-medium" onclick="openLead(' + i + ')">' + esc(r.name || 'Unnamed lead') + '</button></span></td><td><span class="omnimerce-badge omnimerce-badge-raw">' + esc(r.source) + '</span></td><td>' + esc(r.location) + '</td><td>' + (r.website ? '<a href="' + esc(r.website) + '">' + esc(r.website) + '</a>' : '-') + '</td><td>' + esc(r.email) + '</td><td>' + verificationBadge(r) + '</td><td><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="openLead(' + i + ')">View</button></td></tr>'; }).join('') : '<tr><td colspan="8">No leads yet. Create a job, and results will appear here when real adapters are built.</td></tr>';
-  document.getElementById('leadsFooter').textContent = 'Showing ' + leads.length + ' of ' + allLeads().length + ' leads.';
-  window._filteredLeads = leads;
-}
-function openLead(i) { var r = window._filteredLeads[i]; if (!r) return; document.getElementById('leadSheetBody').innerHTML = '<p><strong>Name:</strong> ' + esc(r.name) + '</p><p><strong>Type:</strong> ' + esc(r.type) + '</p><p><strong>Source:</strong> ' + esc(r.source) + '</p><p><strong>Location:</strong> ' + esc(r.location) + '</p><p><strong>Address:</strong> ' + esc(r.address) + '</p><p><strong>Phone:</strong> ' + esc(r.phone) + '</p><p><strong>Website:</strong> ' + esc(r.website) + '</p><p><strong>Email:</strong> ' + esc(r.email) + '</p><p><strong>Email source:</strong> ' + esc(r.email_source) + '</p><p><strong>Verification:</strong> ' + verificationBadge(r) + '</p><p><strong>Verification note:</strong> ' + esc(r.verification_note) + '</p><p><strong>Source URL:</strong> ' + (r.source_url ? '<a href="' + esc(r.source_url) + '">' + esc(r.source_url) + '</a>' : '-') + '</p><p><strong>Job:</strong> ' + esc(r._job.query) + '</p>'; document.getElementById('sheetOverlay').classList.remove('omnimerce-hidden'); document.getElementById('leadSheet').classList.remove('omnimerce-hidden'); }
-function exportLeadsCsv() { var rows = [['source','source_url','name','website','email','verified']]; (window._filteredLeads || allLeads()).forEach(function(r){ rows.push([r.source, r.source_url, r.name, r.website, r.email, r.verified]); }); var csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n'); var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = 'leads.csv'; a.click(); }
-async function createJob() {
-  var body = { source: document.getElementById('source').value, query: document.getElementById('query').value, location: document.getElementById('location').value, limit: parseInt(document.getElementById('limit').value || '100', 10), enrich_email: document.getElementById('enrich').checked };
-  var res = await fetch('/api/jobs', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
-  var data = await res.json();
-  document.getElementById('jobResult').textContent = res.ok ? ('Job created: ' + data.id + ', status: ' + data.status) : ('Error: ' + JSON.stringify(data));
-  if (res.ok) { closeSheets(); await loadJobs(); showView('jobs'); }
-}
-async function loadJobs() {
-  var h = await fetch('/health'); var hd = await h.json().catch(function(){ return {}; });
-  document.getElementById('apiStatus').textContent = 'API: ' + (hd.status || 'unknown');
-  var res = await fetch('/api/jobs'); var jobs = await res.json(); _jobs = jobs;
-  var leads = allLeads();
-  document.getElementById('dashJobs').textContent = jobs.length;
-  document.getElementById('dashLeads').textContent = leads.length;
-  var bySource = {}; jobs.forEach(function(j){ bySource[j.source] = (bySource[j.source] || 0) + 1; });
-  document.getElementById('dashJobsBySource').textContent = Object.keys(bySource).map(function(k){ return k + ': ' + bySource[k]; }).join(', ') || 'No jobs yet.';
-  var leadBySource = {}; leads.forEach(function(r){ leadBySource[r.source] = (leadBySource[r.source] || 0) + 1; });
-  document.getElementById('dashLeadsBySource').textContent = Object.keys(leadBySource).map(function(k){ return k + ': ' + leadBySource[k]; }).join(', ') || 'No leads yet.';
-  var top = Object.keys(leadBySource).sort(function(a,b){ return leadBySource[b] - leadBySource[a]; })[0];
-  document.getElementById('dashTopSource').textContent = top || 'No leads yet';
-  var verified = leads.filter(function(r){ return r.verified; }).length;
-  var pct = leads.length ? Math.round(verified / leads.length * 100) : 0;
-  document.getElementById('dashVerifiedBar').style.width = pct + '%';
-  document.getElementById('dashRawBar').style.width = (leads.length ? 100 - pct : 0) + '%';
-  var completed = jobs.filter(function(j){ return j.status === 'stub_complete'; }).length;
-  var failed = jobs.filter(function(j){ return j.status === 'failed'; }).length;
-  var created = jobs.filter(function(j){ return j.status === 'created'; }).length;
-  document.getElementById('perfCompleted').textContent = completed;
-  document.getElementById('perfLeads').textContent = leads.length;
-  document.getElementById('perfFailed').textContent = failed;
-  var prog = jobs.length ? Math.round(completed / jobs.length * 100) : 0;
-  document.getElementById('perfPercent').textContent = prog + '%';
-  document.getElementById('perfBar').style.width = prog + '%';
-  document.getElementById('queueCompleted').textContent = completed + ' / ' + jobs.length;
-  document.getElementById('queueCreated').textContent = created + ' jobs';
-  document.getElementById('queueFailed').textContent = failed + ' jobs';
-  document.getElementById('activityList').innerHTML = jobs.length ? jobs.slice(-5).reverse().map(function(j){ return '<li class="flex items-center justify-between gap-2"><span>' + esc(j.query) + ' (' + esc(j.source) + ')</span><span class="omnimerce-badge omnimerce-badge-stub">' + esc(j.status) + '</span></li>'; }).join('') : '<li>No jobs yet.</li>';
-  var dashResults = document.getElementById('dashResultsBody');
-  dashResults.innerHTML = leads.length ? leads.slice(0, 10).map(function(r){ return '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.source) + '</td><td>' + esc(r.website) + '</td><td>' + esc(r.email) + '</td><td>' + verificationBadge(r) + '</td></tr>'; }).join('') : '<tr><td colspan="5">No leads yet.</td></tr>';
-  var recent = document.getElementById('recentBody');
-  recent.innerHTML = jobs.length ? jobs.slice(-5).reverse().map(function(j){ return '<tr><td>' + esc(j.source) + '</td><td>' + esc(j.query) + '</td><td>' + badgeFor(j.status) + '</td><td>' + (j.results ? j.results.length : 0) + '</td><td><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="showDetail(\'' + j.id + '\')">View</button></td></tr>'; }).join('') : '<tr><td colspan="5">No jobs yet.</td></tr>';
-  var queue = document.getElementById('queueList');
-  queue.innerHTML = jobs.length ? jobs.map(function(j){ return '<div class="flex items-center gap-4 px-5 py-4"><span>' + statusDot(j.status) + '</span><div class="flex-1 min-w-0"><p class="text-sm font-medium">' + esc(j.query) + '</p><p class="text-xs flex items-center gap-1">' + esc(j.source) + ' | ' + esc(j.created_at) + '</p></div><span class="omnimerce-badge omnimerce-badge-stub">' + esc(j.status) + '</span><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="showDetail(\'' + j.id + '\')">View</button></div>'; }).join('') : '<p class="px-5 py-4 text-sm">No jobs yet.</p>';
-  var deal = document.getElementById('dealGrid');
-  deal.innerHTML = jobs.length ? jobs.map(function(j){ return '<div class="omnimerce-card rounded-xl shadow-sm p-5"><div class="flex justify-between gap-2 items-center"><span class="omnimerce-badge omnimerce-badge-raw">' + esc(j.source) + '</span>' + (j.status === 'stub_complete' ? '<span class="omnimerce-badge omnimerce-badge-verified">Active</span>' : '') + '</div><div class="flex items-center gap-2 mt-4"><span class="omnimerce-avatar">' + esc((j.query || '?').charAt(0).toUpperCase()) + '</span><div><p class="font-medium">' + esc(j.query) + '</p><span class="text-xs">' + esc(j.location) + '</span></div></div><div class="flex items-center justify-between gap-2 mt-4"><span class="text-sm font-medium">' + (j.results ? j.results.length : 0) + ' results</span><span class="omnimerce-badge omnimerce-badge-stub">' + esc(j.status) + '</span></div><div class="flex items-center justify-between text-xs mt-4"><span>' + esc(j.created_at) + '</span><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="showDetail(\'' + j.id + '\')">View</button></div></div>'; }).join('') : '<p class="text-sm">No jobs yet.</p>';
-  renderLeads();
-}
-async function showDetail(id) {
-  showView('jobs');
-  var res = await fetch('/api/jobs/' + id); var job = await res.json();
-  document.getElementById('detailCard').classList.remove('omnimerce-hidden');
-  document.getElementById('detailMeta').textContent = job.source + ' | ' + job.query + ' | ' + job.location + ' | status: ' + job.status;
-  var body = document.getElementById('detailBody');
-  body.innerHTML = (job.results && job.results.length) ? job.results.map(function(r){ return '<tr><td>' + verificationBadge(r) + '</td><td>' + esc(r.name) + '</td><td>' + (r.website ? '<a href="' + esc(r.website) + '">' + esc(r.website) + '</a>' : '-') + '</td><td>' + esc(r.email) + '</td><td>' + (r.source_url ? '<a href="' + esc(r.source_url) + '">' + esc(r.source_url) + '</a>' : '-') + '</td></tr>'; }).join('') : '<tr><td colspan="5">No results yet. This job is a stub until real adapters are built.</td></tr>';
-}
-async function exportJob(id, kind) {
-  var res = await fetch('/api/jobs/' + id); var job = await res.json();
-  var blob, name;
-  if (kind === 'json') { blob = new Blob([JSON.stringify(job, null, 2)], {type: 'application/json'}); name = 'job-' + id + '.json'; }
-  else { var rows = [['source','source_url','name','website','email','verified']]; (job.results || []).forEach(function(r){ rows.push([r.source, r.source_url, r.name, r.website, r.email, r.verified]); }); var csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n'); blob = new Blob([csv], {type: 'text/csv'}); name = 'job-' + id + '.csv'; }
-  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
-}
-function saveSettings() {
-  try { localStorage.setItem('omnimerce_scraper_endpoint', document.getElementById('endpointUrl').value); localStorage.setItem('omnimerce_scraper_proxy', document.getElementById('proxyProvider').value); localStorage.setItem('omnimerce_scraper_cost_limit', document.getElementById('costLimit').value); } catch (e) {}
-  document.getElementById('settingsResult').textContent = 'Saved in this browser only. API key is not saved to the server or the repo.';
-}
-try { document.getElementById('endpointUrl').value = localStorage.getItem('omnimerce_scraper_endpoint') || ''; document.getElementById('proxyProvider').value = localStorage.getItem('omnimerce_scraper_proxy') || ''; document.getElementById('costLimit').value = localStorage.getItem('omnimerce_scraper_cost_limit') || ''; } catch (e) {}
-loadJobs();
-</script>
-</body>
+<!doctype html>
+<html class="h-full" lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Omnimerce Scraper</title>
+    <link rel="icon" href="/media/app/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8" />
+    <meta name="description" content="" />
+    <meta
+      name="keywords"
+      content="keenthemes,react,material,kit,application,dashboard,admin,template"
+    />
+    <meta
+      name="author"
+      content="Metronic - Tailwind React Vite App Concept Template"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700"
+    />
+    <style>
+      .dark body {
+        background-color: hsl(240 10% 4%);
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          const theme = localStorage.getItem('theme') || 'system';
+          const prefersDark = window.matchMedia(
+            '(prefers-color-scheme: dark)',
+          ).matches;
+          const isDarkMode =
+            theme === 'dark' || (theme === 'system' && prefersDark);
+          if (isDarkMode) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="text-foreground bg-background flex h-full text-base antialiased">
+    <div class="flex grow" id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
