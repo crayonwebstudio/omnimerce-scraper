@@ -1,91 +1,261 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Omnimerce Scraper</title>
-<style>
-body { font-family: Arial, sans-serif; background: #FAF8F5; color: #363636; margin: 0; }
-header { background: #242424; color: #fff; padding: 20px; }
-header span { color: #FF795B; }
-main { padding: 20px; max-width: 960px; margin: 0 auto; }
-.card { background: #fff; border: 1px solid #ddd; padding: 16px; margin: 16px 0; }
-button { background: #242424; color: #fff; border: 0; padding: 10px 16px; cursor: pointer; }
-input, select { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
-label { font-weight: bold; }
-.notice { background: #fff3e0; border: 1px solid #FF795B; padding: 12px; }
-table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-</style>
+<link rel="stylesheet" href="/assets/metronic.css">
+<link rel="stylesheet" href="/assets/keenicons/outline/style.css">
+<link rel="stylesheet" href="/assets/omnimerce.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
 </head>
-<body>
-<header>
-<h1>Omnimerce <span>Scraper</span></h1>
-<p>Placeholder UI, pending Metronic Tailwind React Vite integration. Do not treat this layout as the final Metronic UI.</p>
-</header>
-<main>
-<div class="notice">
-<p><strong>Dashboard, placeholder:</strong> Job stats, MB used, and leads per GB will appear here once real adapters are implemented.</p>
-</div>
+<body class="demo1 text-base antialiased">
+<div class="omnimerce-shell flex grow">
+  <aside class="sidebar omnimerce-sidebar hidden md:flex flex-col shrink-0">
+    <div class="sidebar-header flex items-center px-6">
+      <div class="sidebar-logo flex items-center gap-2">
+        <i class="ki-outline ki-element-11 text-xl"></i>
+        <span class="text-lg font-bold">omnimerce <span class="omnimerce-accent">scraper</span></span>
+      </div>
+    </div>
+    <div class="sidebar-wrapper flex flex-col gap-4 px-4 py-4">
+      <p class="text-xs uppercase font-medium px-2">Scraper</p>
+      <nav class="flex flex-col gap-2">
+        <button data-view="dashboard" class="nav-btn omnimerce-nav-active flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left"><i class="ki-outline ki-element-11"></i><span>Dashboard</span></button>
+        <button data-view="newjob" class="nav-btn flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left hover:bg-zinc-100"><i class="ki-outline ki-element-plus"></i><span>New Job</span></button>
+        <button data-view="jobs" class="nav-btn flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left hover:bg-zinc-100"><i class="ki-outline ki-data"></i><span>Jobs</span></button>
+        <button data-view="settings" class="nav-btn flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-left hover:bg-zinc-100"><i class="ki-outline ki-setting-2"></i><span>Settings</span></button>
+      </nav>
+      <div class="omnimerce-card rounded-xl p-4 text-sm" style="background:#fff;color:#363636;">
+        <p class="font-semibold flex items-center gap-2"><i class="ki-outline ki-shield-tick"></i>LinkedIn guardrail</p>
+        <p class="text-sm">Public research only, no automated LinkedIn scraping, no guessed links or emails.</p>
+      </div>
+    </div>
+  </aside>
 
-<div class="card">
-<h2>New Job</h2>
-<label for="source">Source</label>
-<select id="source">
-<option value="google_maps">Google Maps</option>
-<option value="youtube">YouTube</option>
-<option value="instagram">Instagram</option>
-<option value="web">Web</option>
-</select>
-<label for="query">Query</label>
-<input id="query" placeholder="Example: dentists in Berlin">
-<label for="location">Location</label>
-<input id="location" placeholder="Example: Berlin, Germany">
-<label for="limit">Limit</label>
-<input id="limit" type="number" value="100">
-<p><label><input type="checkbox" id="enrich"> Enrich with email, from published websites only</label></p>
-<button onclick="createJob()">Create Job</button>
-<p id="jobResult"></p>
-</div>
+  <div class="wrapper flex grow flex-col min-w-0">
+    <header class="header flex items-center justify-between px-6 bg-white border-b">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="document.querySelector('aside').classList.toggle('hidden')">Menu</button>
+        <div>
+          <h1 class="text-xl font-bold">Omnimerce Scraper</h1>
+          <p class="text-sm">Metronic UI, FastAPI backend, one output format for every source.</p>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2 text-sm">
+        <span class="omnimerce-badge omnimerce-badge-stub">Adapters: stub</span>
+        <span id="apiStatus" class="omnimerce-badge omnimerce-badge-raw">API: checking</span>
+      </div>
+    </header>
 
-<div class="card">
-<h2>Jobs list</h2>
-<button onclick="loadJobs()">Refresh Jobs</button>
-<table>
-<thead><tr><th>ID</th><th>Source</th><th>Query</th><th>Status</th><th>Results</th></tr></thead>
-<tbody id="jobsBody"><tr><td colspan="5">No jobs yet in this session. Jobs are in memory only in this skeleton.</td></tr></tbody>
-</table>
-</div>
+    <main class="flex grow flex-col gap-6 p-6">
+      <section id="view-dashboard">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="omnimerce-card rounded-xl shadow-sm p-6">
+            <p class="text-xs uppercase font-medium">Total jobs</p>
+            <p id="statJobs" class="text-2xl font-bold">0</p>
+            <p class="text-sm">Jobs created in this server session.</p>
+          </div>
+          <div class="omnimerce-card rounded-xl shadow-sm p-6">
+            <p class="text-xs uppercase font-medium">Rows kept</p>
+            <p id="statRows" class="text-2xl font-bold">0</p>
+            <p class="text-sm">Sum of results across jobs, no fake rows.</p>
+          </div>
+          <div class="omnimerce-card rounded-xl shadow-sm p-6">
+            <p class="text-xs uppercase font-medium">MB used</p>
+            <p class="text-2xl font-bold">Not measured yet</p>
+            <p class="text-sm">Proxy and bandwidth tracking starts with real adapters.</p>
+          </div>
+          <div class="omnimerce-card rounded-xl shadow-sm p-6">
+            <p class="text-xs uppercase font-medium">Leads per GB</p>
+            <p class="text-2xl font-bold">Not measured yet</p>
+            <p class="text-sm">Measured from a real 100 lead test, not estimated here.</p>
+          </div>
+        </div>
 
-<div class="card">
-<h2>Settings, placeholder</h2>
-<p>Omnimerce endpoint URL, API key, proxy, and cost limits will be configured here, with secrets masked. No secrets are stored in this repo.</p>
-<p>LinkedIn guardrail: public research only, no automated LinkedIn scraping, no guessed links or emails.</p>
+        <div class="omnimerce-card rounded-xl shadow-sm p-6 mt-6">
+          <h2 class="text-lg font-semibold flex items-center gap-2"><i class="ki-outline ki-chart-line"></i>Recent jobs</h2>
+          <p class="text-sm">Latest jobs first. Open a job to see its results and verification badges.</p>
+          <div class="overflow-x-auto">
+            <table class="omnimerce-table table w-full text-sm">
+              <thead><tr><th>Source</th><th>Query</th><th>Status</th><th>Results</th><th>Action</th></tr></thead>
+              <tbody id="recentBody"><tr><td colspan="5">No jobs yet.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-newjob" class="omnimerce-hidden">
+        <div class="omnimerce-card rounded-xl shadow-sm p-6">
+          <h2 class="text-lg font-semibold flex items-center gap-2"><i class="ki-outline ki-element-plus"></i>New Job</h2>
+          <p class="text-sm">Create a job with the current API. Adapters are stubs, so results will be empty until real adapters are built.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="source">Source</label>
+              <select id="source" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+                <option value="google_maps">Google Maps</option>
+                <option value="youtube">YouTube</option>
+                <option value="instagram">Instagram</option>
+                <option value="web">Web</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="limit">Limit</label>
+              <input id="limit" type="number" value="100" min="1" max="1000" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="query">Query</label>
+              <input id="query" placeholder="Example: dentists in Berlin" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="location">Location</label>
+              <input id="location" placeholder="Example: Berlin, Germany" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+            </div>
+          </div>
+          <div class="flex flex-col gap-2 mt-4 text-sm">
+            <label><input type="checkbox" id="enrich"> Enrich with email, from published websites only</label>
+            <label><input type="checkbox" id="proxyToggle"> Use proxy</label>
+            <p class="text-sm">Proxy is a UI setting for now, it is not sent to the current job API, which has no proxy field.</p>
+          </div>
+          <button class="omnimerce-btn rounded-lg px-6 py-2 text-sm font-medium mt-4" onclick="createJob()">Create Job</button>
+          <p id="jobResult" class="text-sm mt-4"></p>
+        </div>
+      </section>
+
+      <section id="view-jobs" class="omnimerce-hidden">
+        <div class="omnimerce-card rounded-xl shadow-sm p-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold flex items-center gap-2"><i class="ki-outline ki-data"></i>Jobs</h2>
+            <button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="loadJobs()">Refresh Jobs</button>
+          </div>
+          <div class="overflow-x-auto mt-4">
+            <table class="omnimerce-table table w-full text-sm">
+              <thead><tr><th>Status</th><th>Source</th><th>Query</th><th>Rows found</th><th>Rows kept</th><th>MB</th><th>Cost</th><th>Actions</th></tr></thead>
+              <tbody id="jobsBody"><tr><td colspan="8">No jobs yet in this session. Jobs are in memory only.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="detailCard" class="omnimerce-card rounded-xl shadow-sm p-6 mt-6 omnimerce-hidden">
+          <h2 class="text-lg font-semibold">Job detail</h2>
+          <p id="detailMeta" class="text-sm"></p>
+          <div class="overflow-x-auto mt-4">
+            <table class="omnimerce-table table w-full text-sm">
+              <thead><tr><th>Verification</th><th>Name</th><th>Website</th><th>Email</th><th>Source URL</th></tr></thead>
+              <tbody id="detailBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-settings" class="omnimerce-hidden">
+        <div class="omnimerce-card rounded-xl shadow-sm p-6">
+          <h2 class="text-lg font-semibold flex items-center gap-2"><i class="ki-outline ki-setting-2"></i>Settings</h2>
+          <p class="text-sm">These settings are saved in this browser only for now. They are not sent to the server, and no secrets are stored in this repo.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="endpointUrl">Omnimerce endpoint URL</label>
+              <input id="endpointUrl" placeholder="Example: https://example.com/api/v1/muse-responses" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="apiKey">API key, masked</label>
+              <input id="apiKey" type="password" placeholder="Saved in browser only" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="proxyProvider">Proxy provider</label>
+              <select id="proxyProvider" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+                <option value="">Not set</option>
+                <option value="evomi">Evomi</option>
+                <option value="other">Other provider</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-medium" for="costLimit">Cost limit, per job</label>
+              <input id="costLimit" placeholder="Example: 5 USD" class="omnimerce-input rounded-lg px-4 py-2 text-sm w-full">
+            </div>
+          </div>
+          <button class="omnimerce-btn rounded-lg px-6 py-2 text-sm font-medium mt-4" onclick="saveSettings()">Save in this browser</button>
+          <p id="settingsResult" class="text-sm mt-4"></p>
+          <p class="text-sm mt-4">LinkedIn guardrail: public research only, no automated LinkedIn scraping, no guessed links or emails.</p>
+        </div>
+      </section>
+    </main>
+  </div>
 </div>
-</main>
 <script>
+function showView(name) {
+  ['dashboard', 'newjob', 'jobs', 'settings'].forEach(function(v) {
+    document.getElementById('view-' + v).classList.toggle('omnimerce-hidden', v !== name);
+  });
+  document.querySelectorAll('.nav-btn').forEach(function(b) {
+    b.classList.toggle('omnimerce-nav-active', b.dataset.view === name);
+  });
+}
+document.querySelectorAll('.nav-btn').forEach(function(b) {
+  b.addEventListener('click', function() { showView(b.dataset.view); if (b.dataset.view === 'jobs' || b.dataset.view === 'dashboard') loadJobs(); });
+});
+function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function badgeFor(status) { return '<span class="omnimerce-badge omnimerce-badge-stub">' + esc(status) + '</span>'; }
+function verificationBadge(r) {
+  if (r.verified) return '<span class="omnimerce-badge omnimerce-badge-verified">Verified</span>';
+  if (r.email) return '<span class="omnimerce-badge omnimerce-badge-enriched">Enriched</span>';
+  return '<span class="omnimerce-badge omnimerce-badge-raw">Raw</span>';
+}
 async function createJob() {
-  const body = {
-    source: document.getElementById('source').value,
-    query: document.getElementById('query').value,
-    location: document.getElementById('location').value,
-    limit: parseInt(document.getElementById('limit').value || '100', 10),
-    enrich_email: document.getElementById('enrich').checked
-  };
-  const res = await fetch('/api/jobs', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
-  const data = await res.json();
-  document.getElementById('jobResult').textContent = 'Job created: ' + (data.id || JSON.stringify(data));
-  loadJobs();
+  var body = { source: document.getElementById('source').value, query: document.getElementById('query').value, location: document.getElementById('location').value, limit: parseInt(document.getElementById('limit').value || '100', 10), enrich_email: document.getElementById('enrich').checked };
+  var res = await fetch('/api/jobs', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  var data = await res.json();
+  document.getElementById('jobResult').textContent = res.ok ? ('Job created: ' + data.id + ', status: ' + data.status) : ('Error: ' + JSON.stringify(data));
+  loadJobs(); showView('jobs');
 }
 async function loadJobs() {
-  const res = await fetch('/api/jobs');
-  const jobs = await res.json();
-  const body = document.getElementById('jobsBody');
-  if (!jobs.length) { body.innerHTML = '<tr><td colspan="5">No jobs yet.</td></tr>'; return; }
-  body.innerHTML = jobs.map(function(j) {
-    return '<tr><td>' + j.id + '</td><td>' + j.source + '</td><td>' + j.query + '</td><td>' + j.status + '</td><td>' + (j.results ? j.results.length : 0) + '</td></tr>';
-  }).join('');
+  var h = await fetch('/health'); var hd = await h.json().catch(function(){ return {}; });
+  document.getElementById('apiStatus').textContent = 'API: ' + (hd.status || 'unknown');
+  var res = await fetch('/api/jobs'); var jobs = await res.json();
+  document.getElementById('statJobs').textContent = jobs.length;
+  document.getElementById('statRows').textContent = jobs.reduce(function(n, j){ return n + (j.results ? j.results.length : 0); }, 0);
+  var recent = document.getElementById('recentBody');
+  recent.innerHTML = jobs.length ? jobs.slice(-5).reverse().map(function(j){ return '<tr><td>' + esc(j.source) + '</td><td>' + esc(j.query) + '</td><td>' + badgeFor(j.status) + '</td><td>' + (j.results ? j.results.length : 0) + '</td><td><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="showDetail(\'' + j.id + '\')">View</button></td></tr>'; }).join('') : '<tr><td colspan="5">No jobs yet.</td></tr>';
+  var body = document.getElementById('jobsBody');
+  body.innerHTML = jobs.length ? jobs.map(function(j){
+    var n = j.results ? j.results.length : 0;
+    return '<tr><td>' + badgeFor(j.status) + '</td><td>' + esc(j.source) + '</td><td>' + esc(j.query) + '</td><td>' + n + '</td><td>' + n + '</td><td>-</td><td>-</td><td><button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="showDetail(\'' + j.id + '\')">View</button> <button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="exportJob(\'' + j.id + '\', \'csv\')">CSV</button> <button class="omnimerce-btn rounded-lg px-4 py-2 text-sm" onclick="exportJob(\'' + j.id + '\', \'json\')">JSON</button> <span class="omnimerce-badge omnimerce-badge-notsent">Omnimerce: Not sent</span></td></tr>';
+  }).join('') : '<tr><td colspan="8">No jobs yet in this session. Jobs are in memory only.</td></tr>';
+  window._jobs = jobs;
 }
+async function showDetail(id) {
+  showView('jobs');
+  var res = await fetch('/api/jobs/' + id); var job = await res.json();
+  document.getElementById('detailCard').classList.remove('omnimerce-hidden');
+  document.getElementById('detailMeta').textContent = job.source + ' | ' + job.query + ' | ' + job.location + ' | status: ' + job.status;
+  var body = document.getElementById('detailBody');
+  body.innerHTML = (job.results && job.results.length) ? job.results.map(function(r){ return '<tr><td>' + verificationBadge(r) + '</td><td>' + esc(r.name) + '</td><td>' + (r.website ? '<a href="' + esc(r.website) + '">' + esc(r.website) + '</a>' : '-') + '</td><td>' + esc(r.email) + '</td><td>' + (r.source_url ? '<a href="' + esc(r.source_url) + '">' + esc(r.source_url) + '</a>' : '-') + '</td></tr>'; }).join('') : '<tr><td colspan="5">No results yet. This job is a stub until real adapters are built.</td></tr>';
+}
+async function exportJob(id, kind) {
+  var res = await fetch('/api/jobs/' + id); var job = await res.json();
+  var blob, name;
+  if (kind === 'json') { blob = new Blob([JSON.stringify(job, null, 2)], {type: 'application/json'}); name = 'job-' + id + '.json'; }
+  else {
+    var rows = [['source','source_url','name','website','email','verified']];
+    (job.results || []).forEach(function(r){ rows.push([r.source, r.source_url, r.name, r.website, r.email, r.verified]); });
+    var csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    blob = new Blob([csv], {type: 'text/csv'}); name = 'job-' + id + '.csv';
+  }
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+}
+function saveSettings() {
+  try {
+    localStorage.setItem('omnimerce_scraper_endpoint', document.getElementById('endpointUrl').value);
+    localStorage.setItem('omnimerce_scraper_proxy', document.getElementById('proxyProvider').value);
+    localStorage.setItem('omnimerce_scraper_cost_limit', document.getElementById('costLimit').value);
+  } catch (e) {}
+  document.getElementById('settingsResult').textContent = 'Saved in this browser only. API key is not saved to the server or the repo.';
+}
+try {
+  document.getElementById('endpointUrl').value = localStorage.getItem('omnimerce_scraper_endpoint') || '';
+  document.getElementById('proxyProvider').value = localStorage.getItem('omnimerce_scraper_proxy') || '';
+  document.getElementById('costLimit').value = localStorage.getItem('omnimerce_scraper_cost_limit') || '';
+} catch (e) {}
 loadJobs();
 </script>
 </body>
