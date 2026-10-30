@@ -4,6 +4,7 @@ import { ScraperDashboardPage } from './pages/dashboard/page';
 import { ScraperJobDetailPage } from './pages/job-detail/page';
 import { ScraperJobsPage } from './pages/jobs/page';
 import { ScraperLeadsPage } from './pages/leads/page';
+import { ScraperCoreClawPage } from './pages/coreclaw/page';
 import { ScraperSettingsPage } from './pages/settings/page';
 
 export default function ScraperModule() {
@@ -15,6 +16,7 @@ export default function ScraperModule() {
         <Route path="jobs" element={<ScraperJobsPage />} />
         <Route path="jobs/:jobId" element={<ScraperJobDetailPage />} />
         <Route path="leads" element={<ScraperLeadsPage />} />
+        <Route path="coreclaw" element={<ScraperCoreClawPage />} />
         <Route path="settings" element={<ScraperSettingsPage />} />
       </Route>
     </Routes>
