@@ -1,6 +1,9 @@
 FROM node:22-slim AS frontend-build
 WORKDIR /frontend
-COPY frontend/package.json frontend/package-lock.json ./
+# Vendor .npmrc sets legacy-peer-deps=true, required because
+# react-helmet-async 2.0.5 only declares React 16, 17, and 18 peers,
+# while this app uses React 19. Without it, npm ci fails with ERESOLVE.
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN npm ci
 COPY frontend/ ./
 RUN npm run build
