@@ -227,6 +227,22 @@ Decision for the scraper module UI, based on that:
 
 No build, no deployment, and no endpoint POST will happen until he picks scope in point 1.
 
+## CoreClaw menu, replacing the blocked Apify plan, update 2026-10-30
+
+Apify integration was blocked and its tokens all returned 401, so milan switched to CoreClaw. The scraper now has a CoreClaw menu at /scraper/coreclaw, in the same verbatim Metronic app, with nav entry, route, and a page using real vendor Card, Badge, Button, Input, Label, Select, and Table components only, with clean titles.
+
+Verified CoreClaw workers only, checked with the CoreClaw helper before listing:
+- coreclaw~google-maps-scraper v1.3.5: keywords list, base_location one location, max_results per search term, lang en. Output includes name, address, website, phone, rating, review count, categories, and published social links.
+- coreclaw~instagram-profile-scraper v1.0.6: profile_url list of public profile URLs.
+- coreclaw~google-search-scraper v1.1.1: keyword required, location optional, max_pages optional.
+- coreclaw~youtube-channel-scraper v1.0.2: urls list of public channel URLs.
+
+TikTok and Facebook worker ids guessed in an early check were not verified and are not listed. LinkedIn guardrail still applies: public research only, no bulk personal profile scraping by default, and no LinkedIn worker is enabled.
+
+Backend: backend/app/coreclaw.py reads CORECLAW_TOKEN from the environment only, never from code, files, or chat. It starts a run with POST https://openapi.coreclaw.com/api/v2/workers/{workerId}/runs, input.parameters.custom, is_async true, polls GET /runs/{runId}, then reads GET /datasets/{datasetId}/items, and maps each item to the unified record, never inventing email, website, or link. The verification note carries the CoreClaw run id. Endpoints: GET /api/coreclaw/status returns only coreclaw_configured true/false plus the worker list, never a token; POST /api/coreclaw/jobs starts a run; GET /api/coreclaw/jobs lists CoreClaw jobs; GET /api/coreclaw/jobs/{id} refreshes a running job once, then returns it. If CORECLAW_TOKEN is not set, POST returns a clear not-connected error, never fake results.
+
+Coolify env note, important: the CoreClaw token stored for Muse cannot be read back or copied into Coolify. To run a live CoreClaw job, milan must set CORECLAW_TOKEN himself in the Coolify dashboard for app omnimerce-scraper, then redeploy. Until then the live page correctly shows Not connected, and no live CoreClaw run is claimed.
+
 ## UI v3: verbatim Metronic Vite React app, replacing v2 static approximation
 
 Update 2026-10-30, after milan said he does not see the scraper UI as Metronic and wants the same copy of Metronic.
