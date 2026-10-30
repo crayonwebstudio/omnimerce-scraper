@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omnimerce Scraper</title>
+<style>
+body { font-family: Arial, sans-serif; background: #FAF8F5; color: #363636; margin: 0; }
+header { background: #242424; color: #fff; padding: 20px; }
+header span { color: #FF795B; }
+main { padding: 20px; max-width: 960px; margin: 0 auto; }
+.card { background: #fff; border: 1px solid #ddd; padding: 16px; margin: 16px 0; }
+button { background: #242424; color: #fff; border: 0; padding: 10px 16px; cursor: pointer; }
+input, select { padding: 8px; margin: 4px 0; width: 100%; box-sizing: border-box; }
+label { font-weight: bold; }
+.notice { background: #fff3e0; border: 1px solid #FF795B; padding: 12px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+</style>
+</head>
+<body>
+<header>
+<h1>Omnimerce <span>Scraper</span></h1>
+<p>Placeholder UI, pending Metronic Tailwind React Vite integration. Do not treat this layout as the final Metronic UI.</p>
+</header>
+<main>
+<div class="notice">
+<p><strong>Dashboard, placeholder:</strong> Job stats, MB used, and leads per GB will appear here once real adapters are implemented.</p>
+</div>
+
+<div class="card">
+<h2>New Job</h2>
+<label for="source">Source</label>
+<select id="source">
+<option value="google_maps">Google Maps</option>
+<option value="youtube">YouTube</option>
+<option value="instagram">Instagram</option>
+<option value="web">Web</option>
+</select>
+<label for="query">Query</label>
+<input id="query" placeholder="Example: dentists in Berlin">
+<label for="location">Location</label>
+<input id="location" placeholder="Example: Berlin, Germany">
+<label for="limit">Limit</label>
+<input id="limit" type="number" value="100">
+<p><label><input type="checkbox" id="enrich"> Enrich with email, from published websites only</label></p>
+<button onclick="createJob()">Create Job</button>
+<p id="jobResult"></p>
+</div>
+
+<div class="card">
+<h2>Jobs list</h2>
+<button onclick="loadJobs()">Refresh Jobs</button>
+<table>
+<thead><tr><th>ID</th><th>Source</th><th>Query</th><th>Status</th><th>Results</th></tr></thead>
+<tbody id="jobsBody"><tr><td colspan="5">No jobs yet in this session. Jobs are in memory only in this skeleton.</td></tr></tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>Settings, placeholder</h2>
+<p>Omnimerce endpoint URL, API key, proxy, and cost limits will be configured here, with secrets masked. No secrets are stored in this repo.</p>
+<p>LinkedIn guardrail: public research only, no automated LinkedIn scraping, no guessed links or emails.</p>
+</div>
+</main>
+<script>
+async function createJob() {
+  const body = {
+    source: document.getElementById('source').value,
+    query: document.getElementById('query').value,
+    location: document.getElementById('location').value,
+    limit: parseInt(document.getElementById('limit').value || '100', 10),
+    enrich_email: document.getElementById('enrich').checked
+  };
+  const res = await fetch('/api/jobs', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  const data = await res.json();
+  document.getElementById('jobResult').textContent = 'Job created: ' + (data.id || JSON.stringify(data));
+  loadJobs();
+}
+async function loadJobs() {
+  const res = await fetch('/api/jobs');
+  const jobs = await res.json();
+  const body = document.getElementById('jobsBody');
+  if (!jobs.length) { body.innerHTML = '<tr><td colspan="5">No jobs yet.</td></tr>'; return; }
+  body.innerHTML = jobs.map(function(j) {
+    return '<tr><td>' + j.id + '</td><td>' + j.source + '</td><td>' + j.query + '</td><td>' + j.status + '</td><td>' + (j.results ? j.results.length : 0) + '</td></tr>';
+  }).join('');
+}
+loadJobs();
+</script>
+</body>
+</html>
