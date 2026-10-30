@@ -211,8 +211,10 @@ What is NOT complete:
 - The Vite files cannot be copied into Next.js, because Vite components use react-router, react-router-dom, and react-helmet-async, which do not work under Next.js App Router.
 - The theme.woodwolfdigital.com build was stalled on this missing file issue, with a decision prompt delivered 2026-10-29, and nothing changed until milan picks: get the files from the vendor, or authorise removal or stubbing.
 
+Update 2026-10-30, verified from the new Drive upload: milan's new files metronic-tailwind-react-demos_v9.4.13.zip (121 MB, 9,287 files) and metronic-tailwind-react-concepts_v9.4.13.zip (143 MB, 7,846 files) are in ~/workspace/metronics-deploy/new-version-2026-10-30/, separate from the existing v9.5.0 copy, which was not overwritten. The concepts zip contains typescript/nextjs plus typescript/vite. Checked against ~/workspace/metronics-deploy/missing-files.txt, all 44 of 44 missing Next.js concept files are present in the new concepts zip, under metronic-tailwind-react-concepts/typescript/nextjs/, including all 12 store inventory files and all AI, calendar, CRM, mail, real estate, store inventory layout, and todo layout files. So the Next.js version is no longer incomplete in this new upload, even though 9.4.13 is an older version number than 9.5.0. This also unblocks the theme.woodwolfdigital.com Next.js build, which was stalled only on those files, but that rebuild still needs milan's go-ahead and is separate from the scraper setup.
+
 Decision for the scraper module UI, based on that:
-- Use the Metronic Tailwind React Vite version, not the incomplete Next.js version, unless milan provides the 44 missing Next.js files.
+- Use the Metronic Tailwind React Vite version from the new v9.4.13 upload for the scraper UI, because a Vite static build fits behind FastAPI, and the Next.js version is now also complete in v9.4.13 if a Next.js frontend is chosen later.
 - Use Metronic layout, sidebar, header, cards, tables, badges, buttons, and Keenicons, as they already exist in the prebuilt dist and src.
 - Apply Omnimerce branding on top of Metronic structure: Omnimerce logo mark, primary #242424, AI accent #FF795B, background #FAF8F5, text #363636, from the Omnimerce brand file. Do not redraw the Omnimerce logo. Use the supplied master files only.
 - Scraper module screens in Metronic layout:
