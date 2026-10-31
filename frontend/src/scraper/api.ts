@@ -83,6 +83,40 @@ export interface CoreClawWorker {
 export interface CoreClawStatus {
   coreclaw_configured: boolean;
   workers: CoreClawWorker[];
+  source?: string | null;
+}
+
+export interface CoreClawTokenStatus {
+  configured: boolean;
+  source: string | null;
+  masked_hint: string | null;
+}
+
+export async function fetchCoreClawTokenStatus(): Promise<CoreClawTokenStatus> {
+  const res = await fetch('/api/coreclaw/token-status');
+  if (!res.ok) throw new Error('Failed to load CoreClaw token status');
+  return (await res.json()) as CoreClawTokenStatus;
+}
+
+export async function saveCoreClawToken(
+  token: string,
+): Promise<CoreClawTokenStatus> {
+  const res = await fetch('/api/coreclaw/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.detail || 'Failed to save CoreClaw token');
+  }
+  return (await res.json()) as CoreClawTokenStatus;
+}
+
+export async function clearCoreClawToken(): Promise<CoreClawTokenStatus> {
+  const res = await fetch('/api/coreclaw/token', { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to clear CoreClaw token');
+  return (await res.json()) as CoreClawTokenStatus;
 }
 
 export interface CoreClawJobCreate {
