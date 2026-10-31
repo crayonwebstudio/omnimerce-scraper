@@ -132,8 +132,16 @@ export function ScraperCoreClawPage() {
               </p>
               {!status?.coreclaw_configured ? (
                 <p className="text-sm text-muted-foreground">
-                  Set CORECLAW_TOKEN in Coolify for app omnimerce-scraper,
-                  then redeploy, before running a job.
+                  Save your CoreClaw Personal API token in Settings, no
+                  redeploy needed, before running a job. For a persistent
+                  token, set CORECLAW_TOKEN in Coolify for app
+                  omnimerce-scraper, then redeploy.
+                </p>
+              ) : null}
+              {status?.coreclaw_configured && status.source ? (
+                <p className="text-sm text-muted-foreground">
+                  Connected via{' '}
+                  {status.source === 'env' ? 'Coolify env' : 'Settings'}.
                 </p>
               ) : null}
               <p className="text-sm text-muted-foreground">
