@@ -86,6 +86,17 @@ class CoreClawJobCreate(BaseModel):
 class CoreClawStatus(BaseModel):
     coreclaw_configured: bool
     workers: list = Field(default_factory=list)
+    source: str | None = None
+
+
+class CoreClawTokenCreate(BaseModel):
+    token: str
+
+
+class CoreClawTokenStatus(BaseModel):
+    configured: bool
+    source: str | None = None
+    masked_hint: str | None = None
 
 
 @app.get("/health")
@@ -136,6 +147,45 @@ def coreclaw_status():
     return CoreClawStatus(
         coreclaw_configured=coreclaw.configured(),
         workers=coreclaw.WORKERS,
+        source=coreclaw.token_source(),
+    )
+
+
+@app.post("/api/coreclaw/token", response_model=CoreClawTokenStatus)
+def save_coreclaw_token(payload: CoreClawTokenCreate):
+    if not payload.token or not payload.token.strip():
+        raise HTTPException(status_code=400, detail="Token is required.")
+    try:
+        coreclaw.save_token(payload.token)
+    except PermissionError:
+        raise HTTPException(
+            status_code=401, detail="CoreClaw rejected this token. It was not stored."
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"CoreClaw token check failed: {exc}")
+    return CoreClawTokenStatus(
+        configured=coreclaw.configured(),
+        source=coreclaw.token_source(),
+        masked_hint=coreclaw.masked_hint(),
+    )
+
+
+@app.get("/api/coreclaw/token-status", response_model=CoreClawTokenStatus)
+def coreclaw_token_status():
+    return CoreClawTokenStatus(
+        configured=coreclaw.configured(),
+        source=coreclaw.token_source(),
+        masked_hint=coreclaw.masked_hint(),
+    )
+
+
+@app.delete("/api/coreclaw/token", response_model=CoreClawTokenStatus)
+def delete_coreclaw_token():
+    coreclaw.clear_token()
+    return CoreClawTokenStatus(
+        configured=coreclaw.configured(),
+        source=coreclaw.token_source(),
+        masked_hint=coreclaw.masked_hint(),
     )
 
 
@@ -185,7 +235,7 @@ def create_coreclaw_job(payload: CoreClawJobCreate):
     if not coreclaw.configured():
         raise HTTPException(
             status_code=503,
-            detail="CoreClaw is not connected. Set CORECLAW_TOKEN in Coolify for app omnimerce-scraper, then redeploy.",
+            detail="CoreClaw is not connected. Save a CoreClaw token in Settings, or set CORECLAW_TOKEN in Coolify for app omnimerce-scraper, then redeploy.",
         )
     if payload.worker not in coreclaw.WORKER_IDS:
         raise HTTPException(status_code=400, detail="Unknown CoreClaw worker.")
