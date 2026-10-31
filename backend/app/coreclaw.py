@@ -1,9 +1,21 @@
 """CoreClaw client for the Omnimerce scraper.
 
-Token is read from the CORECLAW_TOKEN environment variable only.
-It is never stored in code, in a file, or in a log. If the variable
-is not set, callers must return a clear not-connected error and
-must never return fake results.
+Token resolution, in order:
+1. CORECLAW_TOKEN environment variable, if set. This is the
+   persistent option, set in Coolify.
+2. A token saved in the scraper Settings page, stored server side
+   in a file outside the committed code, with mode 0600, and
+   cached in memory for the running process. This token is
+   verified against CoreClaw before it is stored, is never
+   logged, and is never returned in full by any endpoint.
+
+Persistence limit: a Settings token lives on the running
+container. A redeploy that replaces the container will lose
+it, unless a persistent volume is added later. Coolify env
+remains the persistent alternative.
+
+If neither source is set, callers must return a clear
+not-connected error and must never return fake results.
 
 Worker ids below were verified against CoreClaw before being
 listed here. Do not add a worker id without verifying it first.
@@ -12,6 +24,7 @@ import json
 import os
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 BASE = "https://openapi.coreclaw.com/api/v2"
 
@@ -48,13 +61,120 @@ WORKERS = [
 
 WORKER_IDS = {w["id"] for w in WORKERS}
 
+_STORED_TOKEN = None
+_STORED_TOKEN_LOADED = False
+
+
+def _token_file():
+    override = os.environ.get("CORECLAW_TOKEN_FILE")
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[2] / "data" / "coreclaw_token.json"
+
+
+def _load_stored_token():
+    global _STORED_TOKEN, _STORED_TOKEN_LOADED
+    if _STORED_TOKEN_LOADED:
+        return _STORED_TOKEN
+    _STORED_TOKEN_LOADED = True
+    try:
+        data = json.loads(_token_file().read_text())
+        if isinstance(data, dict) and isinstance(data.get("token"), str):
+            _STORED_TOKEN = data["token"]
+    except Exception:
+        _STORED_TOKEN = None
+    return _STORED_TOKEN
+
+
+def get_token():
+    env_token = os.environ.get("CORECLAW_TOKEN", "").strip()
+    if env_token:
+        return env_token
+    stored = _load_stored_token()
+    return stored.strip() if stored else ""
+
+
+def token_source():
+    if os.environ.get("CORECLAW_TOKEN", "").strip():
+        return "env"
+    if _load_stored_token():
+        return "settings"
+    return None
+
 
 def configured():
-    return bool(os.environ.get("CORECLAW_TOKEN"))
+    return bool(get_token())
 
 
-def _request(method, path, body=None):
-    token = os.environ.get("CORECLAW_TOKEN", "")
+def masked_hint():
+    token = get_token()
+    if not token:
+        return None
+    return "****" + token[-4:] if len(token) >= 4 else "****"
+
+
+def verify_token(token):
+    """Return True only if CoreClaw accepts this token.
+
+    Uses a harmless worker read. 401/403 from CoreClaw means
+    the token is rejected. Any other error is raised, so a
+    network failure is not mistaken for a valid token.
+    """
+    candidate = (token or "").strip()
+    if not candidate:
+        return False
+    req = urllib.request.Request(
+        BASE + "/workers/coreclaw~google-maps-scraper",
+        headers={
+            "Accept": "application/json",
+            "Authorization": "Bearer " + candidate,
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.load(resp)
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403):
+            return False
+        raise RuntimeError(f"CoreClaw token check HTTP {e.code}")
+    return isinstance(payload, dict) and payload.get("code") in (0, None)
+
+
+def save_token(token):
+    """Verify then store a Settings token. Raises on rejection."""
+    candidate = (token or "").strip()
+    if not candidate:
+        raise ValueError("Token is required.")
+    if not verify_token(candidate):
+        raise PermissionError("CoreClaw rejected this token.")
+    global _STORED_TOKEN, _STORED_TOKEN_LOADED
+    path = _token_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps({"token": candidate}))
+    os.chmod(tmp, 0o600)
+    tmp.replace(path)
+    os.chmod(path, 0o600)
+    _STORED_TOKEN = candidate
+    _STORED_TOKEN_LOADED = True
+    return True
+
+
+def clear_token():
+    global _STORED_TOKEN, _STORED_TOKEN_LOADED
+    _STORED_TOKEN = None
+    _STORED_TOKEN_LOADED = True
+    try:
+        _token_file().unlink()
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+
+
+def _request(method, path, body=None, token=None):
+    token = token or get_token()
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(
         BASE + path,
