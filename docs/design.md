@@ -243,6 +243,16 @@ Backend: backend/app/coreclaw.py reads CORECLAW_TOKEN from the environment only,
 
 Coolify env note, important: the CoreClaw token stored for Muse cannot be read back or copied into Coolify. To run a live CoreClaw job, milan must set CORECLAW_TOKEN himself in the Coolify dashboard for app omnimerce-scraper, then redeploy. Until then the live page correctly shows Not connected, and no live CoreClaw run is claimed.
 
+## CoreClaw token in Settings, update 2026-10-31
+
+Milan asked for the token setting inside the scraper Settings menu itself, so he can save it there and the backend can use it, without Coolify env or a redeploy.
+
+Backend: POST /api/coreclaw/token accepts a token, verifies it immediately against CoreClaw GET /workers/coreclaw~google-maps-scraper, and only stores it if CoreClaw accepts it. A rejected token returns 401 and is not stored. A stored token is kept server side only, in /app/data/coreclaw_token.json with mode 0600, cached in memory, never logged, and never returned in full. GET /api/coreclaw/token-status returns only configured true/false, source env or settings, and a masked hint with the last 4 characters. DELETE /api/coreclaw/token clears the stored token. Token resolution is env first, then Settings, then not connected. GET /api/coreclaw/status now also reports source.
+
+Frontend: Settings has a CoreClaw card with a password input, Save CoreClaw Token, Clear, and a Connected or Not connected status line. The full token is never stored in localStorage and never shown back. The CoreClaw page now points to Settings first, with Coolify env kept as the persistent option.
+
+Persistence limit, stated honestly: a Settings token lives on the running container, in /app/data, with no persistent volume attached yet, so a redeploy that replaces the container will lose it and it will need to be saved again in Settings. Coolify env remains the persistent alternative, but is not required for a first run.
+
 ## UI v3: verbatim Metronic Vite React app, replacing v2 static approximation
 
 Update 2026-10-30, after milan said he does not see the scraper UI as Metronic and wants the same copy of Metronic.
