@@ -14,5 +14,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend ./backend
 COPY --from=frontend-build /frontend/dist ./frontend/dist
+# Runtime data dir for a token saved in Settings. It lives on the
+# running container only, no persistent volume is attached yet,
+# so a redeploy that replaces the container loses a Settings token.
+RUN mkdir -p /app/data && chmod 700 /app/data
 EXPOSE 8000
 CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
